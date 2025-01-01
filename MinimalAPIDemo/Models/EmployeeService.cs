@@ -1,56 +1,56 @@
-﻿namespace MinimalAPIDemo.Models
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace MinimalAPIDemo.Models
 {
     public class EmployeeService : IEmployeeService
     {
-        private readonly List<Employee> _employeeList;
+        private readonly ApplicationDbContext _context;
 
-        public EmployeeService()
+        public EmployeeService(ApplicationDbContext context)
         {
-            _employeeList = new List<Employee>
-            {
-                new Employee { Id = 1, Name = "John Doe", Position = "Software Engineer", Salary = 60000 },
-                new Employee { Id = 2, Name = "Jane Smith", Position = "Project Manager", Salary = 80000 }
-            };
+            _context = context;
         }
 
-        public Task<IEnumerable<Employee>> GetAllEmployeesAsync()
+        public async Task<IEnumerable<Employee>> GetAllEmployeesAsync()
         {
-            return Task.FromResult<IEnumerable<Employee>>(_employeeList);
+            return await _context.Employees.ToListAsync();
         }
 
-        public Task<Employee> GetEmployeeByIdAsync(int id)
+        public async Task<Employee> GetEmployeeByIdAsync(int id)
         {
-            var employee = _employeeList.FirstOrDefault(e => e.Id == id);
-            return Task.FromResult(employee);
+            return await _context.Employees.FindAsync(id);
         }
 
-        public Task<Employee> AddEmployeeAsync(Employee newEmployee)
+        public async Task<Employee> AddEmployeeAsync(Employee newEmployee)
         {
-            newEmployee.Id = _employeeList.Count > 0 ? _employeeList.Max(emp => emp.Id) + 1 : 1;
-            _employeeList.Add(newEmployee);
-            return Task.FromResult(newEmployee);
+            _context.Employees.Add(newEmployee);
+            await _context.SaveChangesAsync();
+            return newEmployee;
         }
 
-        public Task<Employee> UpdateEmployeeAsync(int id, Employee updatedEmployee)
+        public async Task<Employee> UpdateEmployeeAsync(int id, Employee updatedEmployee)
         {
-            var employee = _employeeList.FirstOrDefault(emp => emp.Id == id);
+            var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
-                return Task.FromResult<Employee>(null);
+                return null;
 
             employee.Name = updatedEmployee.Name;
             employee.Position = updatedEmployee.Position;
             employee.Salary = updatedEmployee.Salary;
-            return Task.FromResult(employee);
+
+            await _context.SaveChangesAsync();
+            return employee;
         }
 
-        public Task<bool> DeleteEmployeeAsync(int id)
+        public async Task<bool> DeleteEmployeeAsync(int id)
         {
-            var employee = _employeeList.FirstOrDefault(emp => emp.Id == id);
+            var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
-                return Task.FromResult(false);
+                return false;
 
-            _employeeList.Remove(employee);
-            return Task.FromResult(true);
+            _context.Employees.Remove(employee);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
