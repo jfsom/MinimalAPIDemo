@@ -6,7 +6,6 @@
 
         public EmployeeService()
         {
-            // Initialize the in-memory list with some sample data
             _employeeList = new List<Employee>
             {
                 new Employee { Id = 1, Name = "John Doe", Position = "Software Engineer", Salary = 60000 },
@@ -14,43 +13,44 @@
             };
         }
 
-        public List<Employee> GetAllEmployees()
+        public Task<IEnumerable<Employee>> GetAllEmployeesAsync()
         {
-            return _employeeList;
+            return Task.FromResult<IEnumerable<Employee>>(_employeeList);
         }
 
-        public Employee? GetEmployeeById(int id)
+        public Task<Employee> GetEmployeeByIdAsync(int id)
         {
-            return _employeeList.FirstOrDefault(e => e.Id == id);
+            var employee = _employeeList.FirstOrDefault(e => e.Id == id);
+            return Task.FromResult(employee);
         }
 
-        public Employee AddEmployee(Employee newEmployee)
+        public Task<Employee> AddEmployeeAsync(Employee newEmployee)
         {
             newEmployee.Id = _employeeList.Count > 0 ? _employeeList.Max(emp => emp.Id) + 1 : 1;
             _employeeList.Add(newEmployee);
-            return newEmployee;
+            return Task.FromResult(newEmployee);
         }
 
-        public Employee? UpdateEmployee(int id, Employee updatedEmployee)
+        public Task<Employee> UpdateEmployeeAsync(int id, Employee updatedEmployee)
         {
             var employee = _employeeList.FirstOrDefault(emp => emp.Id == id);
             if (employee == null)
-                return null;
+                return Task.FromResult<Employee>(null);
 
             employee.Name = updatedEmployee.Name;
             employee.Position = updatedEmployee.Position;
             employee.Salary = updatedEmployee.Salary;
-            return employee;
+            return Task.FromResult(employee);
         }
 
-        public bool DeleteEmployee(int id)
+        public Task<bool> DeleteEmployeeAsync(int id)
         {
             var employee = _employeeList.FirstOrDefault(emp => emp.Id == id);
             if (employee == null)
-                return false;
+                return Task.FromResult(false);
 
             _employeeList.Remove(employee);
-            return true;
+            return Task.FromResult(true);
         }
     }
 }

@@ -33,12 +33,13 @@ if (app.Environment.IsDevelopment())
 // The EmployeeService and ILogger Services are injected into the endpoints
 
 // Endpoint to retrieve all employees
-app.MapGet("/employees", (IEmployeeService employeeService, ILogger<Program> logger) =>
+app.MapGet("/employees", async (IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
         logger.LogInformation("Retrieving all employees");
-        return Results.Ok(employeeService.GetAllEmployees());
+        var employees = await employeeService.GetAllEmployeesAsync();
+        return Results.Ok(employees);
     }
     catch (Exception ex)
     {
@@ -48,12 +49,12 @@ app.MapGet("/employees", (IEmployeeService employeeService, ILogger<Program> log
 });
 
 // Endpoint to retrieve a single employee by their ID
-app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
+app.MapGet("/employees/{id}", async (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
         logger.LogInformation("Retrieving employee with ID {Id}", id);
-        var employee = employeeService.GetEmployeeById(id);
+        var employee = await employeeService.GetEmployeeByIdAsync(id);
         if (employee == null)
         {
             logger.LogWarning("Employee with ID {Id} not found", id);
@@ -78,7 +79,7 @@ app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService, ILogger
 });
 
 // Endpoint to create a new employee with validation
-app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
+app.MapPost("/employees", async (Employee newEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
@@ -89,7 +90,7 @@ app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeServic
         }
 
         logger.LogInformation("Creating a new employee");
-        var createdEmployee = employeeService.AddEmployee(newEmployee);
+        var createdEmployee = await employeeService.AddEmployeeAsync(newEmployee);
         return Results.Created($"/employees/{createdEmployee.Id}", createdEmployee);
     }
     catch (Exception ex)
@@ -100,7 +101,7 @@ app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeServic
 });
 
 // Endpoint to update an existing employee
-app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
+app.MapPut("/employees/{id}", async (int id, Employee updatedEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
@@ -111,7 +112,7 @@ app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeServic
         }
 
         logger.LogInformation("Updating employee with ID {Id}", id);
-        var employee = employeeService.UpdateEmployee(id, updatedEmployee);
+        var employee = await employeeService.UpdateEmployeeAsync(id, updatedEmployee);
         if (employee == null)
         {
             logger.LogWarning("Employee with ID {Id} not found", id);
@@ -127,12 +128,12 @@ app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeServic
 });
 
 // Endpoint to delete an employee
-app.MapDelete("/employees/{id}", (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
+app.MapDelete("/employees/{id}", async (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
         logger.LogInformation("Deleting employee with ID {Id}", id);
-        var result = employeeService.DeleteEmployee(id);
+        var result = await employeeService.DeleteEmployeeAsync(id);
         if (!result)
         {
             logger.LogWarning("Employee with ID {Id} not found", id);

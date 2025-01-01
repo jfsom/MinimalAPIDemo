@@ -2,10 +2,10 @@
 {
     public interface IEmployeeService
     {
-        List<Employee> GetAllEmployees();
-        Employee? GetEmployeeById(int id);
-        Employee AddEmployee(Employee employee);
-        Employee? UpdateEmployee(int id, Employee updatedEmployee);
-        bool DeleteEmployee(int id);
+        Task<IEnumerable<Employee>> GetAllEmployeesAsync();
+        Task<Employee> GetEmployeeByIdAsync(int id);
+        Task<Employee> AddEmployeeAsync(Employee newEmployee);
+        Task<Employee> UpdateEmployeeAsync(int id, Employee updatedEmployee);
+        Task<bool> DeleteEmployeeAsync(int id);
     }
 }
