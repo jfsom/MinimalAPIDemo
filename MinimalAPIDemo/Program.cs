@@ -1,5 +1,6 @@
 using MinimalAPIDemo.Models;
 
+// Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the DI container
@@ -37,17 +38,36 @@ app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService) =>
     return employee is not null ? Results.Ok(employee) : Results.NotFound();
 });
 
-// Endpoint to create a new employee
+// Endpoint to create a new employee with validation
 app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeService) =>
 {
+    // Validate the new employee using ValidationHelper
+    if (!ValidationHelper.TryValidate(newEmployee, out var validationResults))
+    {
+        // Return 400 Bad Request if validation fails
+        return Results.BadRequest(validationResults);
+    }
+
+    // Add the new employee using the EmployeeService
     var createdEmployee = employeeService.AddEmployee(newEmployee);
+
+    // Return 201 Created with the new employee's data
     return Results.Created($"/employees/{createdEmployee.Id}", createdEmployee);
 });
 
-// Endpoint to update an existing employee
+// Endpoint to update an existing employee with validation
 app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeService employeeService) =>
 {
+    // Validate the updated employee using ValidationHelper
+    if (!ValidationHelper.TryValidate(updatedEmployee, out var validationResults))
+    {
+        return Results.BadRequest(validationResults); // Return 400 Bad Request if validation fails
+    }
+
+    // Update the employee using the EmployeeService
     var employee = employeeService.UpdateEmployee(id, updatedEmployee);
+
+    // Return 200 OK if found and updated, otherwise 404 Not Found
     return employee is not null ? Results.Ok(employee) : Results.NotFound();
 });
 
