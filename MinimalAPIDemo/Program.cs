@@ -1,13 +1,16 @@
+using Microsoft.AspNetCore.Mvc;
 using MinimalAPIDemo.Models;
 
 // Create a builder for the web application
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the DI container
-// Add API explorer for endpoint documentation
-builder.Services.AddEndpointsApiExplorer();
+// Configure logging
+builder.Logging.ClearProviders(); // Clear default providers
+builder.Logging.AddConsole(); // Add Console logging provider
+builder.Logging.AddDebug(); // Add Debug logging provider
 
-// Add Swagger for API documentation
+// Add services to the DI container
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Register EmployeeService in the DI container
@@ -22,103 +25,124 @@ app.UseMiddleware<ErrorHandlerMiddleware>();
 // Configure the HTTP request pipeline for the development environment
 if (app.Environment.IsDevelopment())
 {
-    // Use Swagger middleware to generate Swagger Documentation
     app.UseSwagger();
-    // Use Swagger UI middleware to interact with the Swagger documentation
     app.UseSwaggerUI();
 }
 
 // CRUD operations for Employee model
-// The EmployeeService is injected into the endpoints
+// The EmployeeService and ILogger Services are injected into the endpoints
 
 // Endpoint to retrieve all employees
-app.MapGet("/employees", (IEmployeeService employeeService) =>
+app.MapGet("/employees", (IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
+        logger.LogInformation("Retrieving all employees");
         return Results.Ok(employeeService.GetAllEmployees());
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "An error occurred while retrieving all employees");
         return Results.Problem(ex.Message);
     }
 });
 
 // Endpoint to retrieve a single employee by their ID
-app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService) =>
+app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
-        //Creating Scenario to throw Unhandled Exception
-        int x = 10, y = 0;
-        int result = x / y;
-
+        logger.LogInformation("Retrieving employee with ID {Id}", id);
         var employee = employeeService.GetEmployeeById(id);
-        return employee is not null ? Results.Ok(employee) : Results.NotFound();
+        if (employee == null)
+        {
+            logger.LogWarning("Employee with ID {Id} not found", id);
+            return Results.NotFound(new { Message = $"Employee with ID {id} not found" });
+        }
+        return Results.Ok(employee);
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "An error occurred while retrieving employee with ID {Id}", id);
+
+        var problemDetails = new ProblemDetails
+        {
+            Status = 500,
+            Title = "An unexpected error occurred.",
+            Detail = ex.Message,
+            Instance = $"/employees/{id}"
+        };
+
         return Results.Problem(ex.Message);
     }
 });
 
 // Endpoint to create a new employee with validation
-app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeService) =>
+app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
-        // Validate the new employee using ValidationHelper
         if (!ValidationHelper.TryValidate(newEmployee, out var validationResults))
         {
             // Return 400 Bad Request if validation fails
             return Results.BadRequest(validationResults);
         }
 
-        // Add the new employee using the EmployeeService
+        logger.LogInformation("Creating a new employee");
         var createdEmployee = employeeService.AddEmployee(newEmployee);
-
-        // Return 201 Created with the new employee's data
         return Results.Created($"/employees/{createdEmployee.Id}", createdEmployee);
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "An error occurred while creating a new employee");
         return Results.Problem(ex.Message);
     }
 });
 
-// Endpoint to update an existing employee with validation
-app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeService employeeService) =>
+// Endpoint to update an existing employee
+app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
-        // Validate the updated employee using ValidationHelper
         if (!ValidationHelper.TryValidate(updatedEmployee, out var validationResults))
         {
-            return Results.BadRequest(validationResults); // Return 400 Bad Request if validation fails
+            // Return 400 Bad Request if validation fails
+            return Results.BadRequest(validationResults);
         }
 
-        // Update the employee using the EmployeeService
+        logger.LogInformation("Updating employee with ID {Id}", id);
         var employee = employeeService.UpdateEmployee(id, updatedEmployee);
-
-        // Return 200 OK if found and updated, otherwise 404 Not Found
-        return employee is not null ? Results.Ok(employee) : Results.NotFound();
+        if (employee == null)
+        {
+            logger.LogWarning("Employee with ID {Id} not found", id);
+            return Results.NotFound(new { Message = $"Employee with ID {id} not found" });
+        }
+        return Results.Ok(employee);
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "An error occurred while updating employee with ID {Id}", id);
         return Results.Problem(ex.Message);
     }
 });
 
 // Endpoint to delete an employee
-app.MapDelete("/employees/{id}", (int id, IEmployeeService employeeService) =>
+app.MapDelete("/employees/{id}", (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
 {
     try
     {
+        logger.LogInformation("Deleting employee with ID {Id}", id);
         var result = employeeService.DeleteEmployee(id);
-        return result ? Results.NoContent() : Results.NotFound();
+        if (!result)
+        {
+            logger.LogWarning("Employee with ID {Id} not found", id);
+            return Results.NotFound(new { Message = $"Employee with ID {id} not found" });
+        }
+        return Results.NoContent();
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "An error occurred while deleting employee with ID {Id}", id);
         return Results.Problem(ex.Message);
     }
 });
