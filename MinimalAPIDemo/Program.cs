@@ -16,6 +16,9 @@ builder.Services.AddSingleton<IEmployeeService, EmployeeService>();
 // Build the application
 var app = builder.Build();
 
+// Use the custom error handling middleware
+app.UseMiddleware<ErrorHandlerMiddleware>();
+
 // Configure the HTTP request pipeline for the development environment
 if (app.Environment.IsDevelopment())
 {
@@ -34,6 +37,9 @@ app.MapGet("/employees", (IEmployeeService employeeService) => employeeService.G
 // Endpoint to retrieve a single employee by their ID
 app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService) =>
 {
+    //Creating Scenario to throw Unhandled Exception
+    int x = 10, y = 0;
+    int result = x / y;
     var employee = employeeService.GetEmployeeById(id);
     return employee is not null ? Results.Ok(employee) : Results.NotFound();
 });
