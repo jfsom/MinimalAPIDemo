@@ -32,56 +32,95 @@ if (app.Environment.IsDevelopment())
 // The EmployeeService is injected into the endpoints
 
 // Endpoint to retrieve all employees
-app.MapGet("/employees", (IEmployeeService employeeService) => employeeService.GetAllEmployees());
+app.MapGet("/employees", (IEmployeeService employeeService) =>
+{
+    try
+    {
+        return Results.Ok(employeeService.GetAllEmployees());
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
+});
 
 // Endpoint to retrieve a single employee by their ID
 app.MapGet("/employees/{id}", (int id, IEmployeeService employeeService) =>
 {
-    //Creating Scenario to throw Unhandled Exception
-    int x = 10, y = 0;
-    int result = x / y;
-    var employee = employeeService.GetEmployeeById(id);
-    return employee is not null ? Results.Ok(employee) : Results.NotFound();
+    try
+    {
+        //Creating Scenario to throw Unhandled Exception
+        int x = 10, y = 0;
+        int result = x / y;
+
+        var employee = employeeService.GetEmployeeById(id);
+        return employee is not null ? Results.Ok(employee) : Results.NotFound();
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
 });
 
 // Endpoint to create a new employee with validation
 app.MapPost("/employees", (Employee newEmployee, IEmployeeService employeeService) =>
 {
-    // Validate the new employee using ValidationHelper
-    if (!ValidationHelper.TryValidate(newEmployee, out var validationResults))
+    try
     {
-        // Return 400 Bad Request if validation fails
-        return Results.BadRequest(validationResults);
+        // Validate the new employee using ValidationHelper
+        if (!ValidationHelper.TryValidate(newEmployee, out var validationResults))
+        {
+            // Return 400 Bad Request if validation fails
+            return Results.BadRequest(validationResults);
+        }
+
+        // Add the new employee using the EmployeeService
+        var createdEmployee = employeeService.AddEmployee(newEmployee);
+
+        // Return 201 Created with the new employee's data
+        return Results.Created($"/employees/{createdEmployee.Id}", createdEmployee);
     }
-
-    // Add the new employee using the EmployeeService
-    var createdEmployee = employeeService.AddEmployee(newEmployee);
-
-    // Return 201 Created with the new employee's data
-    return Results.Created($"/employees/{createdEmployee.Id}", createdEmployee);
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
 });
 
 // Endpoint to update an existing employee with validation
 app.MapPut("/employees/{id}", (int id, Employee updatedEmployee, IEmployeeService employeeService) =>
 {
-    // Validate the updated employee using ValidationHelper
-    if (!ValidationHelper.TryValidate(updatedEmployee, out var validationResults))
+    try
     {
-        return Results.BadRequest(validationResults); // Return 400 Bad Request if validation fails
+        // Validate the updated employee using ValidationHelper
+        if (!ValidationHelper.TryValidate(updatedEmployee, out var validationResults))
+        {
+            return Results.BadRequest(validationResults); // Return 400 Bad Request if validation fails
+        }
+
+        // Update the employee using the EmployeeService
+        var employee = employeeService.UpdateEmployee(id, updatedEmployee);
+
+        // Return 200 OK if found and updated, otherwise 404 Not Found
+        return employee is not null ? Results.Ok(employee) : Results.NotFound();
     }
-
-    // Update the employee using the EmployeeService
-    var employee = employeeService.UpdateEmployee(id, updatedEmployee);
-
-    // Return 200 OK if found and updated, otherwise 404 Not Found
-    return employee is not null ? Results.Ok(employee) : Results.NotFound();
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
 });
 
 // Endpoint to delete an employee
 app.MapDelete("/employees/{id}", (int id, IEmployeeService employeeService) =>
 {
-    var result = employeeService.DeleteEmployee(id);
-    return result ? Results.NoContent() : Results.NotFound();
+    try
+    {
+        var result = employeeService.DeleteEmployee(id);
+        return result ? Results.NoContent() : Results.NotFound();
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
 });
 
 // Run the application
