@@ -24,9 +24,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Build the application
 var app = builder.Build();
 
-// Use the custom error handling middleware
-app.UseMiddleware<ErrorHandlerMiddleware>();
-
 // Configure the HTTP request pipeline for the development environment
 if (app.Environment.IsDevelopment())
 {
@@ -43,7 +40,10 @@ app.MapGet("/employees", async (IEmployeeService employeeService, ILogger<Progra
     try
     {
         logger.LogInformation("Retrieving all employees");
+        //int x = 0;
+        //int y = 10 / x;
         var employees = await employeeService.GetAllEmployeesAsync();
+
         return Results.Ok(employees);
     }
     catch (Exception ex)
@@ -51,7 +51,9 @@ app.MapGet("/employees", async (IEmployeeService employeeService, ILogger<Progra
         logger.LogError(ex, "An error occurred while retrieving all employees");
         return Results.Problem(ex.Message);
     }
-});
+})
+.AddEndpointFilter<LoggingFilter>()
+.AddEndpointFilter<ExceptionHandlingFilter>();
 
 // Endpoint to retrieve a single employee by their ID
 app.MapGet("/employees/{id}", async (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
@@ -81,7 +83,9 @@ app.MapGet("/employees/{id}", async (int id, IEmployeeService employeeService, I
 
         return Results.Problem(ex.Message);
     }
-});
+})
+.AddEndpointFilter<LoggingFilter>()
+.AddEndpointFilter<ExceptionHandlingFilter>();
 
 // Endpoint to create a new employee with validation
 app.MapPost("/employees", async (Employee newEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
@@ -103,7 +107,9 @@ app.MapPost("/employees", async (Employee newEmployee, IEmployeeService employee
         logger.LogError(ex, "An error occurred while creating a new employee");
         return Results.Problem(ex.Message);
     }
-});
+})
+.AddEndpointFilter<LoggingFilter>()
+.AddEndpointFilter<ExceptionHandlingFilter>();
 
 // Endpoint to update an existing employee
 app.MapPut("/employees/{id}", async (int id, Employee updatedEmployee, IEmployeeService employeeService, ILogger<Program> logger) =>
@@ -130,7 +136,9 @@ app.MapPut("/employees/{id}", async (int id, Employee updatedEmployee, IEmployee
         logger.LogError(ex, "An error occurred while updating employee with ID {Id}", id);
         return Results.Problem(ex.Message);
     }
-});
+})
+.AddEndpointFilter<LoggingFilter>()
+.AddEndpointFilter<ExceptionHandlingFilter>();
 
 // Endpoint to delete an employee
 app.MapDelete("/employees/{id}", async (int id, IEmployeeService employeeService, ILogger<Program> logger) =>
@@ -151,7 +159,9 @@ app.MapDelete("/employees/{id}", async (int id, IEmployeeService employeeService
         logger.LogError(ex, "An error occurred while deleting employee with ID {Id}", id);
         return Results.Problem(ex.Message);
     }
-});
+})
+.AddEndpointFilter<LoggingFilter>()
+.AddEndpointFilter<ExceptionHandlingFilter>();
 
 // Run the application
 app.Run();
