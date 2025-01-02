@@ -40,8 +40,8 @@ app.MapGet("/employees", async (IEmployeeService employeeService, ILogger<Progra
     try
     {
         logger.LogInformation("Retrieving all employees");
-        //int x = 0;
-        //int y = 10 / x;
+        int x = 0;
+        int y = 10 / x;
         var employees = await employeeService.GetAllEmployeesAsync();
 
         return Results.Ok(employees);
@@ -51,6 +51,15 @@ app.MapGet("/employees", async (IEmployeeService employeeService, ILogger<Progra
         logger.LogError(ex, "An error occurred while retrieving all employees");
         return Results.Problem(ex.Message);
     }
+
+    // To Test the Exception Handling Filter Functionality, We can keep
+    // the below mentioned commented code and above mentioned code we can comment 
+
+    //logger.LogInformation("Retrieving all employees");
+    //int x = 0;
+    //int y = 10 / x;
+    //var employees = await employeeService.GetAllEmployeesAsync();
+    //return Results.Ok(employees);
 })
 .AddEndpointFilter<LoggingFilter>()
 .AddEndpointFilter<ExceptionHandlingFilter>();
